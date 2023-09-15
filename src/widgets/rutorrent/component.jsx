@@ -12,7 +12,7 @@ export default function Component({ service }) {
   const { data: statusData, error: statusError } = useWidgetAPI(widget);
 
   if (statusError) {
-    return <Container error={statusError} />;
+    return <Container service={service} error={statusError} />;
   }
 
   if (!statusData) {
@@ -34,8 +34,8 @@ export default function Component({ service }) {
   return (
     <Container service={service}>
       <Block label="rutorrent.active" value={active.length} />
-      <Block label="rutorrent.upload" value={t("common.bitrate", { value: upload })} />
-      <Block label="rutorrent.download" value={t("common.bitrate", { value: download })} />
+      <Block label="rutorrent.upload" value={t("common.byterate", { value: upload })} />
+      <Block label="rutorrent.download" value={t("common.byterate", { value: download })} />
     </Container>
   );
 }

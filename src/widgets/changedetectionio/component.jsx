@@ -12,11 +12,16 @@ export default function Component({ service }) {
   const { data, error } = useWidgetAPI(widget, "info");
 
   if (error) {
-    return <Container error={error} />;
+    return <Container service={service} error={error} />;
   }
 
   if (!data) {
-    return <Container service={service} />;
+    return (
+      <Container service={service}>
+        <Block label="changedetectionio.diffsDetected" />
+        <Block label="changedetectionio.totalObserved" />
+      </Container>
+    );
   }
 
   const totalObserved = Object.keys(data).length;

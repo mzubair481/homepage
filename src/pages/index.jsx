@@ -4,10 +4,13 @@ import Head from "next/head";
 import dynamic from "next/dynamic";
 import classNames from "classnames";
 import { useTranslation } from "next-i18next";
-import { useEffect, useContext, useState } from "react";
+import { useEffect, useContext, useState, useMemo } from "react";
 import { BiError } from "react-icons/bi";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import { useRouter } from "next/router";
 
+import Tab from "components/tab";
+import FileContent from "components/filecontent";
 import ServicesGroup from "components/services/group";
 import BookmarksGroup from "components/bookmarks/group";
 import Widget from "components/widgets/widget";
@@ -18,10 +21,12 @@ import { getSettings } from "utils/config/config";
 import { ColorContext } from "utils/contexts/color";
 import { ThemeContext } from "utils/contexts/theme";
 import { SettingsContext } from "utils/contexts/settings";
+import { TabContext } from "utils/contexts/tab";
 import { bookmarksResponse, servicesResponse, widgetsResponse } from "utils/config/api-response";
 import ErrorBoundary from "components/errorboundry";
 import themes from "utils/styles/themes";
 import QuickLaunch from "components/quicklaunch";
+import { getStoredProvider, searchProviders } from "components/widgets/search/search";
 
 const ThemeToggle = dynamic(() => import("components/toggles/theme"), {
   ssr: false,
@@ -99,7 +104,7 @@ function Index({ initialSettings, fallback }) {
           localStorage.setItem("hash", hashData.hash);
         }
 
-        if (!initialSettings.isValid || (previousHash && previousHash !== hashData.hash)) {
+        if (previousHash && previousHash !== hashData.hash) {
           setStale(true);
           localStorage.setItem("hash", hashData.hash);
 
@@ -111,7 +116,7 @@ function Index({ initialSettings, fallback }) {
         }
       }
     }
-  }, [hashData, initialSettings]);
+  }, [hashData]);
 
   if (stale) {
     return (
@@ -159,6 +164,7 @@ const headerStyles = {
     "m-4 mb-0 sm:m-8 sm:mb-0 rounded-md shadow-md shadow-theme-900/10 dark:shadow-theme-900/20 bg-theme-100/20 dark:bg-white/5 p-3",
   underlined: "m-4 mb-0 sm:m-8 sm:mb-1 border-b-2 pb-4 border-theme-800 dark:border-theme-200/50",
   clean: "m-4 mb-0 sm:m-8 sm:mb-0",
+  boxedWidgets: "m-4 mb-0 sm:m-8 sm:mb-0 sm:mt-1",
 };
 
 function Home({ initialSettings }) {
@@ -166,6 +172,8 @@ function Home({ initialSettings }) {
   const { theme, setTheme } = useContext(ThemeContext);
   const { color, setColor } = useContext(ColorContext);
   const { settings, setSettings } = useContext(SettingsContext);
+  const { activeTab, setActiveTab } = useContext(TabContext);
+  const { asPath } = useRouter();
 
   useEffect(() => {
     setSettings(initialSettings);
@@ -174,7 +182,7 @@ function Home({ initialSettings }) {
   const { data: services } = useSWR("/api/services");
   const { data: bookmarks } = useSWR("/api/bookmarks");
   const { data: widgets } = useSWR("/api/widgets");
-  
+
   const servicesAndBookmarks = [...services.map(sg => sg.services).flat(), ...bookmarks.map(bg => bg.bookmarks).flat()]
 
   useEffect(() => {
@@ -193,11 +201,26 @@ function Home({ initialSettings }) {
 
   const [searching, setSearching] = useState(false);
   const [searchString, setSearchString] = useState("");
+  let searchProvider = null;
+  const searchWidget = Object.values(widgets).find(w => w.type === "search");
+  if (searchWidget) {
+    if (Array.isArray(searchWidget.options?.provider)) {
+      // if search provider is a list, try to retrieve from localstorage, fall back to the first
+      searchProvider = getStoredProvider() ?? searchProviders[searchWidget.options.provider[0]];
+    } else if (searchWidget.options?.provider === 'custom') {
+      searchProvider = {
+        url: searchWidget.options.url
+      }
+    } else {
+      searchProvider = searchProviders[searchWidget.options?.provider];
+    }
+  }
+  const headerStyle = settings?.headerStyle || "underlined";
 
   useEffect(() => {
     function handleKeyDown(e) {
-      if (e.target.tagName === "BODY") {
-        if (String.fromCharCode(e.keyCode).match(/(\w|\s)/g) && !(e.altKey || e.ctrlKey || e.metaKey || e.shiftKey)) {
+      if (e.target.tagName === "BODY" || e.target.id === "inner_wrapper") {
+        if (e.key.match(/(\w|\s)/g) && !(e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.code === "Tab")) {
           setSearching(true);
         } else if (e.key === "Escape") {
           setSearchString("");
@@ -213,15 +236,111 @@ function Home({ initialSettings }) {
     }
   })
 
+  const tabs = useMemo( () => [
+    ...new Set(
+      Object.keys(settings.layout ?? {}).map(
+        (groupName) => settings.layout[groupName]?.tab
+      ).filter(group => group)
+    )
+  ], [settings.layout]);
+
+  if (!activeTab) {
+    const initialTab = decodeURI(asPath.substring(asPath.indexOf("#") + 1));
+    if (initialTab !== '/') {
+      setActiveTab(initialTab)
+    } else {
+      setActiveTab(tabs['0'] ?? false)
+    }
+  }
+
+  const servicesAndBookmarksGroups = useMemo(() => {
+    const tabGroupFilter = g => g && [activeTab, undefined].includes(settings.layout?.[g.name]?.tab);
+    const undefinedGroupFilter = g => settings.layout?.[g.name] === undefined;
+
+    const layoutGroups = Object.keys(settings.layout ?? {}).map(
+      (groupName) => services?.find(g => g.name === groupName) ?? bookmarks?.find(b => b.name === groupName)
+    ).filter(tabGroupFilter);
+
+    if (!settings.layout || !layoutGroups) {
+      // wait for settings to populate, otherwise all the widgets will be requested initially even if we are on a single tab
+      return <div />;
+    }
+
+    const serviceGroups = services?.filter(tabGroupFilter).filter(undefinedGroupFilter);
+    const bookmarkGroups = bookmarks.filter(tabGroupFilter).filter(undefinedGroupFilter);
+
+    return <>
+      {tabs.length > 0 && <div key="tabs" id="tabs" className="p-4 sm:p-8 sm:pt-4 sm:pb-0">
+        <ul className={classNames(
+          "sm:flex rounded-md bg-theme-100/20 dark:bg-white/5",
+          settings.cardBlur !== undefined && `backdrop-blur${settings.cardBlur.length ? '-': "" }${settings.cardBlur}`
+         )} id="myTab" data-tabs-toggle="#myTabContent" role="tablist" >
+          {tabs.map(tab => <Tab key={tab} tab={tab} />)}
+        </ul>
+      </div>}
+      {layoutGroups.length > 0 && <div key="layoutGroups" id="layout-groups" className="flex flex-wrap p-4 sm:p-8 sm:pt-4 items-start pb-2">
+        {layoutGroups.map((group) => (
+          group.services ?
+            (<ServicesGroup
+              key={group.name}
+              group={group.name}
+              services={group}
+              layout={settings.layout?.[group.name]}
+              fiveColumns={settings.fiveColumns}
+              disableCollapse={settings.disableCollapse}
+            />) :
+            (<BookmarksGroup
+              key={group.name}
+              bookmarks={group}
+              layout={settings.layout?.[group.name]}
+              disableCollapse={settings.disableCollapse}
+            />)
+        )
+      )}
+      </div>}
+      {serviceGroups?.length > 0 && <div key="services" id="services" className="flex flex-wrap p-4 sm:p-8 sm:pt-4 items-start pb-2">
+        {serviceGroups.map((group) => (
+          <ServicesGroup
+            key={group.name}
+            group={group.name}
+            services={group}
+            layout={settings.layout?.[group.name]}
+            fiveColumns={settings.fiveColumns}
+            disableCollapse={settings.disableCollapse}
+          />
+        ))}
+      </div>}
+      {bookmarkGroups?.length > 0 && <div key="bookmarks" id="bookmarks" className="flex flex-wrap p-4 sm:p-8 sm:pt-4 items-start pb-2">
+        {bookmarkGroups.map((group) => (
+          <BookmarksGroup
+            key={group.name}
+            bookmarks={group}
+            layout={settings.layout?.[group.name]}
+            disableCollapse={settings.disableCollapse}
+          />
+        ))}
+      </div>}
+      </>
+  }, [
+    tabs,
+    activeTab,
+    services,
+    bookmarks,
+    settings.layout,
+    settings.fiveColumns,
+    settings.disableCollapse,
+    settings.cardBlur
+  ]);
+
   return (
     <>
       <Head>
-        <title>{initialSettings.title || "Homepage"}</title>
-        {initialSettings.base && <base href={initialSettings.base} />}
-        {initialSettings.favicon ? (
+        <title>{settings.title || "Homepage"}</title>
+        {settings.base && <base href={settings.base} />}
+        {settings.favicon ? (
           <>
-            <link rel="apple-touch-icon" sizes="180x180" href={initialSettings.favicon} />
-            <link rel="icon" href={initialSettings.favicon} />
+            <link rel="apple-touch-icon" sizes="180x180" href={settings.favicon} />
+            <link rel="icon" href={settings.favicon} />
           </>
         ) : (
           <>
@@ -231,70 +350,78 @@ function Home({ initialSettings }) {
             <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=4" />
           </>
         )}
-        <meta
-          name="msapplication-TileColor"
-          content={themes[initialSettings.color || "slate"][initialSettings.theme || "dark"]}
-        />
-        <meta name="theme-color" content={themes[initialSettings.color || "slate"][initialSettings.theme || "dark"]} />
+        <meta name="msapplication-TileColor" content={themes[settings.color || "slate"][settings.theme || "dark"]} />
+        <meta name="theme-color" content={themes[settings.color || "slate"][settings.theme || "dark"]} />
       </Head>
-      <div className="relative container m-auto flex flex-col justify-between z-10">
+
+      <link rel="preload" href="/api/config/custom.css" as="fetch" crossOrigin="anonymous" />
+      <style data-name="custom.css">
+        <FileContent path="custom.css"
+          loadingValue="/* Loading custom CSS... */"
+          errorValue="/* Failed to load custom CSS... */"
+          emptyValue="/* No custom CSS */"
+        />
+      </style>
+      <link rel="preload" href="/api/config/custom.js" as="fetch" crossOrigin="anonymous" />
+      <script data-name="custom.js">
+        <FileContent path="custom.js"
+          loadingValue="/* Loading custom JS... */"
+          errorValue="/* Failed to load custom JS... */"
+          emptyValue="/* No custom JS */"
+        />
+      </script>
+
+      <div className="relative container m-auto flex flex-col justify-start z-10 h-full">
+        <QuickLaunch
+          servicesAndBookmarks={servicesAndBookmarks}
+          searchString={searchString}
+          setSearchString={setSearchString}
+          isOpen={searching}
+          close={setSearching}
+          searchProvider={settings.quicklaunch?.hideInternetSearch ? null : searchProvider}
+        />
         <div
+          id="information-widgets"
           className={classNames(
-            "flex flex-row flex-wrap  justify-between",
-            headerStyles[initialSettings.headerStyle || "underlined"]
+            "flex flex-row flex-wrap justify-between",
+            headerStyles[headerStyle],
+            settings.cardBlur !== undefined && headerStyle === "boxed" && `backdrop-blur${settings.cardBlur.length ? '-' : ""}${settings.cardBlur}`
           )}
         >
-          <QuickLaunch
-            servicesAndBookmarks={servicesAndBookmarks}
-            searchString={searchString}
-            setSearchString={setSearchString}
-            isOpen={searching}
-            close={setSearching}
-            searchDescriptions={settings.quicklaunch?.searchDescriptions}
-          />
           {widgets && (
             <>
               {widgets
                 .filter((widget) => !rightAlignedWidgets.includes(widget.type))
                 .map((widget, i) => (
-                  <Widget key={i} widget={widget} />
+                  <Widget key={i} widget={widget} style={{ header: headerStyle, isRightAligned: false, cardBlur: settings.cardBlur }} />
                 ))}
 
-              <div className="m-auto sm:ml-2 flex flex-wrap grow sm:basis-auto justify-between md:justify-end">
+              <div id="information-widgets-right" className={classNames(
+                "m-auto flex flex-wrap grow sm:basis-auto justify-between md:justify-end",
+                headerStyle === "boxedWidgets" ? "sm:ml-4" : "sm:ml-2"
+              )}>
                 {widgets
                   .filter((widget) => rightAlignedWidgets.includes(widget.type))
                   .map((widget, i) => (
-                    <Widget key={i} widget={widget} />
+                    <Widget key={i} widget={widget} style={{ header: headerStyle, isRightAligned: true, cardBlur: settings.cardBlur }} />
                   ))}
               </div>
             </>
           )}
         </div>
 
-        {services && (
-          <div className="flex flex-wrap p-4 sm:p-8 sm:pt-4 items-start pb-2">
-            {services.map((group) => (
-              <ServicesGroup key={group.name} services={group} layout={initialSettings.layout?.[group.name]} />
-            ))}
+        {servicesAndBookmarksGroups}
+
+        <div id="footer" className="flex flex-col mt-auto p-8 w-full">
+          <div id="style" className="flex w-full justify-end">
+            {!settings?.color && <ColorToggle />}
+            <Revalidate />
+            {!settings.theme && <ThemeToggle />}
           </div>
-        )}
 
-        {bookmarks && (
-          <div className={`grow flex flex-wrap pt-0 p-4 sm:p-8 gap-2 grid-cols-1 lg:grid-cols-2 lg:grid-cols-${Math.min(6, bookmarks.length)}`}>
-            {bookmarks.map((group) => (
-              <BookmarksGroup key={group.name} group={group} />
-            ))}
+          <div id="version" className="flex mt-4 w-full justify-end">
+            {!settings.hideVersion && <Version />}
           </div>
-        )}
-
-        <div className="flex p-8 pb-0 w-full justify-end">
-          {!initialSettings?.color && <ColorToggle />}
-          <Revalidate />
-          {!initialSettings?.theme && <ThemeToggle />}
-        </div>
-
-        <div className="flex p-8 pt-4 w-full justify-end">
-          <Version />
         </div>
       </div>
     </>
@@ -303,15 +430,26 @@ function Home({ initialSettings }) {
 
 export default function Wrapper({ initialSettings, fallback }) {
   const wrappedStyle = {};
+  let backgroundBlur = false;
+  let backgroundSaturate = false;
+  let backgroundBrightness = false;
   if (initialSettings && initialSettings.background) {
-    const opacity = initialSettings.backgroundOpacity ?? 1;
+    let opacity = initialSettings.backgroundOpacity ?? 1;
+    let backgroundImage = initialSettings.background;
+    if (typeof initialSettings.background === 'object') {
+      backgroundImage = initialSettings.background.image;
+      backgroundBlur = initialSettings.background.blur !== undefined;
+      backgroundSaturate = initialSettings.background.saturate !== undefined;
+      backgroundBrightness = initialSettings.background.brightness !== undefined;
+      if (initialSettings.background.opacity !== undefined) opacity = initialSettings.background.opacity / 100;
+    }
     const opacityValue = 1 - opacity;
     wrappedStyle.backgroundImage = `
       linear-gradient(
         rgb(var(--bg-color) / ${opacityValue}),
         rgb(var(--bg-color) / ${opacityValue})
       ),
-      url(${initialSettings.background})`;
+      url(${backgroundImage})`;
     wrappedStyle.backgroundPosition = "center";
     wrappedStyle.backgroundSize = "cover";
   }
@@ -330,7 +468,17 @@ export default function Wrapper({ initialSettings, fallback }) {
         className="fixed overflow-auto w-full h-full bg-theme-50 dark:bg-theme-800 transition-all"
         style={wrappedStyle}
       >
-        <Index initialSettings={initialSettings} fallback={fallback} />
+        <div
+        id="inner_wrapper"
+        tabIndex="-1"
+        className={classNames(
+          'fixed overflow-auto w-full h-full',
+          backgroundBlur && `backdrop-blur${initialSettings.background.blur.length ? '-' : ""}${initialSettings.background.blur}`,
+          backgroundSaturate && `backdrop-saturate-${initialSettings.background.saturate}`,
+          backgroundBrightness && `backdrop-brightness-${initialSettings.background.brightness}`,
+        )}>
+          <Index initialSettings={initialSettings} fallback={fallback} />
+        </div>
       </div>
     </div>
   );

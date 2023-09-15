@@ -3,6 +3,12 @@ import { MdSettingsEthernet } from "react-icons/md";
 import { useTranslation } from "next-i18next";
 import { SiUbiquiti } from "react-icons/si";
 
+import Error from "../widget/error";
+import Container from "../widget/container";
+import Raw from "../widget/raw";
+import WidgetIcon from "../widget/widget_icon";
+import PrimaryText from "../widget/primary_text";
+
 import useWidgetAPI from "utils/proxy/use-widget-api";
 
 export default function Widget({ options }) {
@@ -13,36 +19,16 @@ export default function Widget({ options }) {
   const { data: statsData, error: statsError } = useWidgetAPI(options, "stat/sites", { index: options.index });
 
   if (statsError) {
-    return (
-      <div className="flex flex-col justify-center first:ml-0 ml-4">
-        <div className="flex flex-row items-center justify-end">
-          <div className="flex flex-col items-center">
-            <BiError className="w-8 h-8 text-theme-800 dark:text-theme-200" />
-            <div className="flex flex-col ml-3 text-left">
-              <span className="text-theme-800 dark:text-theme-200 text-sm">{t("widget.api_error")}</span>
-              <span className="text-theme-800 dark:text-theme-200 text-xs">-</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <Error options={options} />
   }
 
-  const defaultSite = statsData?.data?.find(s => s.name === "default");
+  const defaultSite = options.site ? statsData?.data.find(s => s.desc === options.site) : statsData?.data?.find(s => s.name === "default");
 
   if (!defaultSite) {
-    return (
-      <div className="flex flex-col justify-center first:ml-0 ml-4">
-        <div className="flex flex-row items-center justify-end">
-          <div className="flex flex-col items-center">
-            <SiUbiquiti className="w-5 h-5 text-theme-800 dark:text-theme-200" />
-          </div>
-          <div className="flex flex-col ml-3 text-left">
-            <span className="text-theme-800 dark:text-theme-200 text-xs">{t("unifi.wait")}</span>
-          </div>
-        </div>
-      </div>
-    );
+    return <Container options={options} additionalClassNames="information-widget-unifi-console">
+      <PrimaryText>{t("unifi.wait")}</PrimaryText>
+      <WidgetIcon icon={SiUbiquiti} />
+    </Container>;
   }
 
   const wan = defaultSite.health.find(h => h.subsystem === "wan");
@@ -55,8 +41,11 @@ export default function Widget({ options }) {
   const name = wan.gw_name ?? defaultSite.desc;
   const uptime = wan["gw_system-stats"] ? wan["gw_system-stats"].uptime : null;
 
-  return (
-    <div className="flex-none flex flex-row items-center mr-3 py-1.5">
+  const dataEmpty = !(wan.show || lan.show || wlan.show || uptime);
+
+  return <Container options={options} additionalClassNames="information-widget-unifi-console">
+    <Raw>
+      <div className="flex-none flex flex-row items-center mr-3 py-1.5">
       <div className="flex flex-col">
         <div className="flex flex-row ml-3 mb-0.5">
           <SiUbiquiti className="text-theme-800 dark:text-theme-200 w-3 h-3 mr-1" />
@@ -64,6 +53,14 @@ export default function Widget({ options }) {
             {name}
           </div>
         </div>
+        {dataEmpty && <div className="flex flex-row ml-3 text-[8px] justify-between">
+        <div className="flex flex-row items-center justify-end">
+          <div className="flex flex-row">
+            <BiError className="w-4 h-4 text-theme-800 dark:text-theme-200" />
+            <span className="text-theme-800 dark:text-theme-200 text-xs">{t("unifi.empty_data")}</span>
+          </div>
+        </div>
+      </div>}
         <div className="flex flex-row ml-3 text-[10px] justify-between">
           {uptime && <div className="flex flex-row" title={t("unifi.uptime")}>
             <div className="pr-0.5 text-theme-800 dark:text-theme-200">
@@ -132,6 +129,7 @@ export default function Widget({ options }) {
           </div>
         </div>}
       </div>
-    </div>
-  );
+      </div>
+    </Raw>
+  </Container>
 }

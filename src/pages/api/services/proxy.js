@@ -22,6 +22,7 @@ export default async function handler(req, res) {
       if (widget?.mappings) {
         const mapping = widget?.mappings?.[req.query.endpoint];
         const mappingParams = mapping?.params;
+        const optionalParams = mapping?.optionalParams;
         const map = mapping?.map;
         const endpoint = mapping?.endpoint;
         const endpointProxy = mapping?.proxyHandler || serviceProxyHandler;
@@ -32,6 +33,7 @@ export default async function handler(req, res) {
         }
 
         req.method = mapping?.method || "GET";
+        if (mapping?.body) req.body = mapping?.body;
         req.query.endpoint = endpoint;
 
         if (req.query.segments) {
@@ -39,10 +41,22 @@ export default async function handler(req, res) {
           req.query.endpoint = formatApiCall(endpoint, segments);
         }
 
-        if (req.query.query && mappingParams) {
+        if (req.query.query && (mappingParams || optionalParams)) {
           const queryParams = JSON.parse(req.query.query);
-          const query = new URLSearchParams(mappingParams.map((p) => [p, queryParams[p]]));
+
+          let filteredOptionalParams = []
+          if (optionalParams) filteredOptionalParams = optionalParams.filter(p => queryParams[p] !== undefined);
+          
+          let params = [];
+          if (mappingParams) params = params.concat(mappingParams);
+          if (filteredOptionalParams) params = params.concat(filteredOptionalParams);
+          
+          const query = new URLSearchParams(params.map((p) => [p, queryParams[p]]));
           req.query.endpoint = `${req.query.endpoint}?${query}`;
+        }
+
+        if (mapping?.headers) {
+          req.extraHeaders = mapping.headers;
         }
 
         if (endpointProxy instanceof Function) {

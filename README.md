@@ -37,8 +37,7 @@
 - **Secure!** Every API request to backend services goes through a proxy server, so your API keys are never exposed to the frontend client.
 - Images built for AMD64 (x86_64), ARM64, ARMv7 and ARMv6
   - Supports all Raspberry Pi's, most SBCs & Apple Silicon
-- Full i18n support with automatic language detection
-  - Translations for Catalan, Chinese, Dutch, Finnish, French, German, Hebrew, Hungarian, Malay, Norwegian Bokmål, Polish, Portuguese, Portuguese (Brazil), Romanian, Russian, Spanish, Swedish and Yue
+- Full i18n support with translations for Catalan, Chinese, Dutch, Finnish, French, German, Hebrew, Hungarian, Malay, Norwegian Bokmål, Polish, Portuguese, Portuguese (Brazil), Romanian, Russian, Spanish, Swedish and Yue
   - Want to help translate? [Join the Weblate project](https://hosted.weblate.org/engage/homepage/)
 - Service & Web Bookmarks
 - Docker Integration
@@ -86,6 +85,8 @@ services:
     volumes:
       - /path/to/config:/app/config # Make sure your local config directory exists
       - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations
+    # user: 1000:1000 optional, not compatibile with direct socket see https://gethomepage.dev/en/configs/docker/#using-socket-directly
+    restart: unless-stopped
 ```
 
 or docker run:
@@ -142,7 +143,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) to start.
 
-This is a [Next.js](https://nextjs.org/) application, see their doucmentation for more information:
+This is a [Next.js](https://nextjs.org/) application, see their documentation for more information:
 
 ## Contributors
 

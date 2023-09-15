@@ -5,7 +5,7 @@ export function formatApiCall(url, args) {
     return args[key] || "";
   };
 
-  return url.replace(/\/+$/, "").replace(find, replace);
+  return url.replace(/\/+$/, "").replace(find, replace).replace(find,replace);
 }
 
 function getURLSearchParams(widget, endpoint) {
@@ -52,4 +52,13 @@ export function jsonArrayTransform(data, transform) {
 
 export function jsonArrayFilter(data, filter) {
   return jsonArrayTransform(data, (items) => items.filter(filter));
+}
+
+export function sanitizeErrorURL(errorURL) {
+  // Dont display sensitive params on frontend
+  const url = new URL(errorURL);
+  ["apikey", "api_key", "token", "t"].forEach(key => {
+    if (url.searchParams.has(key)) url.searchParams.set(key, "***")
+  });
+  return url.toString();
 }

@@ -8,18 +8,15 @@ export default function Component({ service }) {
   const { t } = useTranslation();
   const { widget } = service;
 
-  const { data: indexersData, error: indexersError } = useWidgetAPI(widget, "indexer");
   const { data: grabsData, error: grabsError } = useWidgetAPI(widget, "indexerstats");
 
-  if (indexersError || grabsError) {
-    const finalError = indexersError ?? grabsError;
-    return <Container error={finalError} />;
+  if (grabsError) {
+    return <Container service={service} error={grabsError} />;
   }
 
-  if (!indexersData || !grabsData) {
+  if (!grabsData) {
     return (
       <Container service={service}>
-        <Block label="prowlarr.enableIndexers" />
         <Block label="prowlarr.numberOfGrabs" />
         <Block label="prowlarr.numberOfQueries" />
         <Block label="prowlarr.numberOfFailGrabs" />
@@ -28,8 +25,6 @@ export default function Component({ service }) {
     );
   }
 
-  const indexers = indexersData?.filter((indexer) => indexer.enable === true);
-
   let numberOfGrabs = 0;
   let numberOfQueries = 0;
   let numberOfFailedGrabs = 0;
@@ -37,13 +32,12 @@ export default function Component({ service }) {
   grabsData?.indexers?.forEach((element) => {
     numberOfGrabs += element.numberOfGrabs;
     numberOfQueries += element.numberOfQueries;
-    numberOfFailedGrabs += numberOfFailedGrabs + element.numberOfFailedGrabs;
-    numberOfFailedQueries += numberOfFailedQueries + element.numberOfFailedQueries;
+    numberOfFailedGrabs += element.numberOfFailedGrabs;
+    numberOfFailedQueries += element.numberOfFailedQueries;
   });
 
   return (
     <Container service={service}>
-      <Block label="prowlarr.enableIndexers" value={t("common.number", { value: indexers.length })} />
       <Block label="prowlarr.numberOfGrabs" value={t("common.number", { value: numberOfGrabs })} />
       <Block label="prowlarr.numberOfQueries" value={t("common.number", { value: numberOfQueries })} />
       <Block label="prowlarr.numberOfFailGrabs" value={t("common.number", { value: numberOfFailedGrabs })} />

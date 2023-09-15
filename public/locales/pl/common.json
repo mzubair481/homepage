@@ -13,19 +13,32 @@
         "load": "Obciążenie",
         "total": "Całkowite",
         "free": "Wolne",
-        "cpu": "CPU"
+        "cpu": "CPU",
+        "mem": "PAM",
+        "temp": "TEMP.",
+        "max": "Maks",
+        "uptime": "CZAS",
+        "months": "miesiąc",
+        "days": "dni",
+        "hours": "godz",
+        "minutes": "min"
     },
     "emby": {
         "no_active": "Brak aktywnych strumieni",
         "playing": "Odtwarzanie",
         "transcoding": "Transkodowanie",
-        "bitrate": "Bitrate"
+        "bitrate": "Bitrate",
+        "movies": "Filmy",
+        "series": "Seriale",
+        "episodes": "Odcinki",
+        "songs": "Piosenki"
     },
     "tautulli": {
         "playing": "Odtwarzanie",
         "transcoding": "Transkodowanie",
         "bitrate": "Bitrate",
-        "no_active": "Brak aktywnych strumieni"
+        "no_active": "Brak aktywnych strumieni",
+        "plex_connection_error": "Check Plex Connection"
     },
     "speedtest": {
         "download": "Pobieranie",
@@ -65,7 +78,14 @@
         "cpu": "Procesor",
         "offline": "Offline",
         "error": "Błąd",
-        "unknown": "Nieznany"
+        "unknown": "Nieznany",
+        "running": "Działa",
+        "starting": "Rozpoczynanie",
+        "unhealthy": "Niezdrowe",
+        "not_found": "Nie znaleziono",
+        "exited": "Exited",
+        "partial": "Częściowe",
+        "healthy": "Zdrowy"
     },
     "nzbget": {
         "rate": "Szybkość",
@@ -91,18 +111,22 @@
     "sonarr": {
         "wanted": "Poszukiwane",
         "queued": "W kolejce",
-        "series": "Seriale"
+        "series": "Seriale",
+        "queue": "Queue",
+        "unknown": "Unknown"
     },
     "radarr": {
         "wanted": "Poszukiwane",
         "queued": "W kolejce",
         "movies": "Filmy",
-        "missing": "Brakujące"
+        "missing": "Brakujące",
+        "queue": "Queue",
+        "unknown": "Unknown"
     },
     "lidarr": {
         "wanted": "Poszukiwane",
         "queued": "W kolejce",
-        "albums": "Albumy"
+        "artists": "Artists"
     },
     "readarr": {
         "wanted": "Poszukiwane",
@@ -132,7 +156,8 @@
     "pihole": {
         "queries": "Zapytania",
         "blocked": "Zablokowane",
-        "gravity": "Gravity"
+        "gravity": "Grawitacja",
+        "blocked_percent": "Blocked %"
     },
     "traefik": {
         "routers": "Routery",
@@ -203,17 +228,34 @@
         "wlan": "WLAN",
         "devices": "Urządzenia",
         "lan_devices": "Urządzenia LAN",
-        "wlan_devices": "Urządzenia WLAN"
+        "wlan_devices": "Urządzenia WLAN",
+        "empty_data": "Nieznany stan"
     },
     "plex": {
         "streams": "Aktywne strumienie",
         "movies": "Filmy",
-        "tv": "Seriale"
+        "tv": "Seriale",
+        "albums": "Albumy"
     },
     "glances": {
         "cpu": "Procesor",
-        "mem": "Pamięć",
-        "wait": "Proszę czekać"
+        "wait": "Proszę czekać",
+        "temp": "TEMP",
+        "uptime": "CZAS",
+        "days": "dni",
+        "hours": "godz",
+        "load": "Load",
+        "warn": "Warn",
+        "total": "Total",
+        "free": "Free",
+        "used": "Used",
+        "crit": "Crit",
+        "read": "Read",
+        "write": "Write",
+        "gpu": "GPU",
+        "mem": "Mem",
+        "swap": "Swap",
+        "_temp": "Temp"
     },
     "changedetectionio": {
         "diffsDetected": "Wykryto różnic",
@@ -279,7 +321,11 @@
     },
     "quicklaunch": {
         "bookmark": "Zakładka",
-        "service": "Usługi"
+        "service": "Usługi",
+        "search": "Wyszukaj",
+        "custom": "Niestandardowe",
+        "visit": "Odwiedź",
+        "url": "Adres URL"
     },
     "homebridge": {
         "available_update": "System",
@@ -287,7 +333,10 @@
         "update_available": "Dostępna aktualizacja",
         "up_to_date": "Aktualny",
         "child_bridges": "Child Bridges",
-        "child_bridges_status": "{{ok}}/{{total}}"
+        "child_bridges_status": "{{ok}}/{{total}}",
+        "up": "Up",
+        "pending": "Oczekujące",
+        "down": "Down"
     },
     "autobrr": {
         "approvedPushes": "Zaakceptowane",
@@ -337,7 +386,7 @@
     },
     "scrutiny": {
         "passed": "Powodzenie",
-        "failed": "Niepowodzenie",
+        "failed": "Nieudane",
         "unknown": "Nieznane"
     },
     "paperlessngx": {
@@ -413,12 +462,276 @@
     "medusa": {
         "wanted": "Poszukiwane",
         "queued": "Zakolejkowane",
-        "series": "Seria"
+        "series": "Seriale"
     },
     "octoprint": {
         "printer_state": "Status",
         "temp_tool": "Tool temp",
         "temp_bed": "Bed temp",
-        "job_completion": "Completion"
+        "job_completion": "Ukończono"
+    },
+    "cloudflared": {
+        "origin_ip": "Origin IP",
+        "status": "Status"
+    },
+    "proxmoxbackupserver": {
+        "datastore_usage": "Datastore",
+        "failed_tasks_24h": "Failed Tasks 24h",
+        "cpu_usage": "CPU",
+        "memory_usage": "Pamięć"
+    },
+    "immich": {
+        "users": "Użytkownicy",
+        "photos": "Zdjęcia",
+        "videos": "Filmy",
+        "storage": "Pamięć"
+    },
+    "uptimekuma": {
+        "up": "Sites Up",
+        "down": "Niedziałające strony",
+        "uptime": "Czas działania",
+        "incident": "Incydent",
+        "m": "min"
+    },
+    "komga": {
+        "libraries": "Biblioteki",
+        "series": "Seriale",
+        "books": "Książki"
+    },
+    "mylar": {
+        "series": "Seriale",
+        "issues": "Zgłoszenia",
+        "wanted": "Wanted"
+    },
+    "photoprism": {
+        "albums": "Albumy",
+        "photos": "Zdjęcia",
+        "videos": "Filmy",
+        "people": "Ludzie"
+    },
+    "diskstation": {
+        "uptime": "Czas działania",
+        "volumeAvailable": "Dostępne",
+        "days": "Dni"
+    },
+    "fileflows": {
+        "queue": "Kolejka",
+        "processing": "Przetwarzanie",
+        "processed": "Processed",
+        "time": "Czas"
+    },
+    "grafana": {
+        "dashboards": "Dashboards",
+        "datasources": "Źródła danych",
+        "totalalerts": "Total Alerts",
+        "alertstriggered": "Alerts Triggered"
+    },
+    "nextcloud": {
+        "cpuload": "Obciążenie CPU",
+        "memoryusage": "Użycie pamięci",
+        "freespace": "Wolna przestrzeń",
+        "activeusers": "Aktywni użytkownicy",
+        "numfiles": "Pliki",
+        "numshares": "Shared Items"
+    },
+    "kopia": {
+        "status": "Status",
+        "size": "Rozmiar",
+        "lastrun": "Ostatnie uruchomienie",
+        "nextrun": "Next Run",
+        "failed": "Nieudane"
+    },
+    "unmanic": {
+        "active_workers": "Aktywni pracownicy",
+        "total_workers": "Total Workers",
+        "records_total": "Długość kolejki"
+    },
+    "healthchecks": {
+        "new": "Nowy",
+        "up": "Online",
+        "grace": "In Grace Period",
+        "down": "Offline",
+        "paused": "Zatrzymane",
+        "status": "Status",
+        "last_ping": "Last Ping",
+        "never": "No pings yet"
+    },
+    "pterodactyl": {
+        "servers": "Serwery",
+        "nodes": "Nodes"
+    },
+    "prometheus": {
+        "targets_up": "Targets Up",
+        "targets_down": "Targets Down",
+        "targets_total": "Total Targets"
+    },
+    "minecraft": {
+        "players": "Gracze",
+        "version": "Wersja",
+        "status": "Status",
+        "up": "Online",
+        "down": "Offline"
+    },
+    "ghostfolio": {
+        "gross_percent_today": "Dzisiaj",
+        "gross_percent_1y": "Rok",
+        "gross_percent_max": "All time"
+    },
+    "audiobookshelf": {
+        "podcasts": "Podcasty",
+        "books": "Książki",
+        "podcastsDuration": "Czas trwania",
+        "booksDuration": "Czas trwania"
+    },
+    "homeassistant": {
+        "people_home": "People Home",
+        "lights_on": "Lights On",
+        "switches_on": "Switches On"
+    },
+    "freshrss": {
+        "subscriptions": "Subskrypcje",
+        "unread": "Nieprzeczytane"
+    },
+    "channelsdvrserver": {
+        "shows": "Shows",
+        "recordings": "Nagrywanie",
+        "scheduled": "W kolejce",
+        "passes": "Passes"
+    },
+    "whatsupdocker": {
+        "monitoring": "Monitoring",
+        "updates": "Aktualizacje"
+    },
+    "tailscale": {
+        "address": "Address",
+        "expires": "Expires",
+        "never": "Never",
+        "last_seen": "Last Seen",
+        "now": "Now",
+        "years": "{{number}}y",
+        "weeks": "{{number}}w",
+        "days": "{{number}}d",
+        "hours": "{{number}}h",
+        "minutes": "{{number}}m",
+        "seconds": "{{number}}s",
+        "ago": "{{value}} Ago"
+    },
+    "qnap": {
+        "cpuUsage": "CPU Usage",
+        "memUsage": "MEM Usage",
+        "systemTempC": "System Temp",
+        "poolUsage": "Pool Usage",
+        "volumeUsage": "Volume Usage",
+        "invalid": "Invalid"
+    },
+    "pfsense": {
+        "load": "Load Avg",
+        "memory": "Mem Usage",
+        "wanStatus": "WAN Status",
+        "up": "Up",
+        "down": "Down",
+        "temp": "Temp",
+        "disk": "Disk Usage",
+        "wanIP": "WAN IP"
+    },
+    "caddy": {
+        "upstreams": "Upstreams",
+        "requests": "Current requests",
+        "requests_failed": "Failed requests"
+    },
+    "evcc": {
+        "pv_power": "Production",
+        "battery_soc": "Battery",
+        "grid_power": "Grid",
+        "home_power": "Consumption",
+        "charge_power": "Charger",
+        "watt_hour": "Wh"
+    },
+    "pialert": {
+        "total": "Total",
+        "connected": "Connected",
+        "new_devices": "New Devices",
+        "down_alerts": "Down Alerts"
+    },
+    "jdownloader": {
+        "downloadCount": "Queue Count",
+        "downloadSpeed": "Download Speed",
+        "downloadBytesRemaining": "Remaining",
+        "downloadTotalBytes": "Size"
+    },
+    "kavita": {
+        "seriesCount": "Series",
+        "totalFiles": "Files"
+    },
+    "gamedig": {
+        "name": "Name",
+        "map": "Map",
+        "currentPlayers": "Current players",
+        "players": "Players",
+        "maxPlayers": "Max players",
+        "bots": "Bots",
+        "ping": "Ping",
+        "status": "Status",
+        "online": "Online",
+        "offline": "Offline"
+    },
+    "azuredevops": {
+        "status": "Status",
+        "buildId": "Build ID",
+        "succeeded": "Succeeded",
+        "notStarted": "Not Started",
+        "failed": "Failed",
+        "myPrs": "My PRs",
+        "approved": "Approved",
+        "result": "Result",
+        "canceled": "Canceled",
+        "inProgress": "In Progress",
+        "totalPrs": "Total PRs"
+    },
+    "urbackup": {
+        "ok": "Ok",
+        "errored": "Errors",
+        "noRecent": "Out of Date",
+        "totalUsed": "Used Storage"
+    },
+    "openmediavault": {
+        "downloading": "Downloading",
+        "total": "Total",
+        "running": "Running",
+        "stopped": "Stopped",
+        "passed": "Passed",
+        "failed": "Failed"
+    },
+    "mealie": {
+        "recipes": "Recipes",
+        "users": "Users",
+        "categories": "Categories",
+        "tags": "Tags"
+    },
+    "atsumeru": {
+        "series": "Series",
+        "archives": "Archives",
+        "chapters": "Chapters",
+        "categories": "Categories"
+    },
+    "calibreweb": {
+        "books": "Books",
+        "authors": "Authors",
+        "categories": "Categories",
+        "series": "Series"
+    },
+    "uptimerobot": {
+        "status": "Status",
+        "uptime": "Uptime",
+        "lastDown": "Last Downtime",
+        "downDuration": "Downtime Duration",
+        "sitesUp": "Sites Up",
+        "sitesDown": "Sites Down",
+        "paused": "Paused",
+        "notyetchecked": "Not Yet Checked",
+        "up": "Up",
+        "seemsdown": "Seems Down",
+        "down": "Down",
+        "unknown": "Unknown"
     }
 }

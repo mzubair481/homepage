@@ -6,18 +6,20 @@ import ResolvedIcon from "./resolvedicon";
 
 import { SettingsContext } from "utils/contexts/settings";
 
-export default function QuickLaunch({servicesAndBookmarks, searchString, setSearchString, isOpen, close, searchDescriptions}) {
+export default function QuickLaunch({servicesAndBookmarks, searchString, setSearchString, isOpen, close, searchProvider}) {
   const { t } = useTranslation();
   const { settings } = useContext(SettingsContext);
+  const { searchDescriptions, hideVisitURL } = settings?.quicklaunch ? settings.quicklaunch : { searchDescriptions: false, hideVisitURL: false };
 
   const searchField = useRef();
 
   const [results, setResults] = useState([]);
   const [currentItemIndex, setCurrentItemIndex] = useState(null);
+  const [url, setUrl] = useState(null);
 
   function openCurrentItem(newWindow) {
     const result = results[currentItemIndex];
-    window.open(result.href, newWindow ? "_blank" : result.target ?? settings.target ?? "_blank");
+    window.open(result.href, newWindow ? "_blank" : result.target ?? settings.target ?? "_blank", 'noreferrer');
   }
 
   const closeAndReset = useCallback(() => {
@@ -29,12 +31,21 @@ export default function QuickLaunch({servicesAndBookmarks, searchString, setSear
   }, [close, setSearchString, setCurrentItemIndex]);
 
   function handleSearchChange(event) {
-    setSearchString(event.target.value.toLowerCase())
+    const rawSearchString = event.target.value.toLowerCase();
+    try {
+      if (!/.+[.:].+/g.test(rawSearchString)) throw new Error(); // basic test for probably a url
+      let urlString = rawSearchString;
+      if (urlString.indexOf('http') !== 0) urlString = `https://${rawSearchString}`;
+      setUrl(new URL(urlString)); // basic validation
+    } catch (e) {
+      setUrl(null);
+    }
+    setSearchString(rawSearchString);
   }
 
   function handleSearchKeyDown(event) {
     if (!isOpen) return;
-    
+
     if (event.key === "Escape") {
       closeAndReset();
       event.preventDefault();
@@ -59,6 +70,16 @@ export default function QuickLaunch({servicesAndBookmarks, searchString, setSear
     openCurrentItem(event.metaKey);
   }
 
+  function handleItemKeyDown(event) {
+    if (!isOpen) return;
+
+    // native button handles other keys
+    if (event.key === "Escape") {
+      closeAndReset();
+      event.preventDefault();
+    }
+  }
+
   useEffect(() => {
     if (searchString.length === 0) setResults([]);
     else {
@@ -76,13 +97,33 @@ export default function QuickLaunch({servicesAndBookmarks, searchString, setSear
         newResults = newResults.sort((a, b) => b.priority - a.priority);
       }
 
+      if (searchProvider) {
+        newResults.push(
+          {
+            href: searchProvider.url + encodeURIComponent(searchString),
+            name: `${searchProvider.name ?? t("quicklaunch.custom")} ${t("quicklaunch.search")} `,
+            type: 'search',
+          }
+        )
+      }
+
+      if (!hideVisitURL && url) {
+        newResults.unshift(
+          {
+            href: url.toString(),
+            name: `${t("quicklaunch.visit")} URL`,
+            type: 'url',
+          }
+        )
+      }
+
       setResults(newResults);
 
       if (newResults.length) {
         setCurrentItemIndex(0);
       }
     }
-  }, [searchString, servicesAndBookmarks, searchDescriptions]);
+  }, [searchString, servicesAndBookmarks, searchDescriptions, hideVisitURL, searchProvider, url, t]);
 
 
   const [hidden, setHidden] = useState(true);
@@ -90,7 +131,7 @@ export default function QuickLaunch({servicesAndBookmarks, searchString, setSear
     function handleBackdropClick(event) {
       if (event.target?.tagName === "DIV") closeAndReset();
     }
-    
+
     if (isOpen) {
       searchField.current.focus();
       document.body.addEventListener('click', handleBackdropClick);
@@ -113,7 +154,7 @@ export default function QuickLaunch({servicesAndBookmarks, searchString, setSear
 
   return (
     <div className={classNames(
-      "relative z-20 ease-in-out duration-300 transition-opacity",
+      "relative z-40 ease-in-out duration-300 transition-opacity",
       hidden && !isOpen && "hidden",
       !hidden && isOpen && "opacity-100",
       !isOpen && "opacity-0",
@@ -129,26 +170,26 @@ export default function QuickLaunch({servicesAndBookmarks, searchString, setSear
               )} type="text" autoCorrect="false" ref={searchField} value={searchString} onChange={handleSearchChange} onKeyDown={handleSearchKeyDown} />
             {results.length > 0 && <ul className="max-h-[60vh] overflow-y-auto m-2">
               {results.map((r, i) => (
-                <li key={r.name}>
-                  <button type="button" data-index={i} onMouseEnter={handleItemHover} className={classNames(
+                <li key={r.container ?? r.app ?? `${r.name}-${r.href}`}>
+                  <button type="button" data-index={i} onMouseEnter={handleItemHover} onClick={handleItemClick} onKeyDown={handleItemKeyDown} className={classNames(
                     "flex flex-row w-full items-center justify-between rounded-md text-sm md:text-xl py-2 px-4 cursor-pointer text-theme-700 dark:text-theme-200",
                     i === currentItemIndex && "bg-theme-300/50 dark:bg-theme-700/50",
-                    )} onClick={handleItemClick}>
+                    )}>
                     <div className="flex flex-row items-center mr-4 pointer-events-none">
-                      <div className="w-5 text-xs mr-4">
+                      {(r.icon || r.abbr) && <div className="w-5 text-xs mr-4">
                         {r.icon && <ResolvedIcon icon={r.icon} />}
                         {r.abbr && r.abbr}
-                      </div>
+                      </div>}
                       <div className="flex flex-col md:flex-row text-left items-baseline mr-4 pointer-events-none">
                         <span className="mr-4">{r.name}</span>
-                        {r.description && 
+                        {r.description &&
                           <span className="text-xs text-theme-600 text-light">
                             {searchDescriptions && r.priority < 2 ? highlightText(r.description) : r.description}
                           </span>
                         }
                       </div>
                     </div>
-                    <div className="text-xs text-theme-600 font-bold pointer-events-none">{r.type === 'service' ? t("quicklaunch.service") : t("quicklaunch.bookmark")}</div>
+                    <div className="text-xs text-theme-600 font-bold pointer-events-none">{t(`quicklaunch.${r.type ? r.type.toLowerCase() : 'bookmark'}`)}</div>
                   </button>
                 </li>
               ))}

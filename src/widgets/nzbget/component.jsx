@@ -12,7 +12,7 @@ export default function Component({ service }) {
   const { data: statusData, error: statusError } = useWidgetAPI(widget, "status");
 
   if (statusError) {
-    return <Container error={statusError} />;
+    return <Container service={service} error={statusError} />;
   }
 
   if (!statusData) {
@@ -27,7 +27,7 @@ export default function Component({ service }) {
 
   return (
     <Container service={service}>
-      <Block label="nzbget.rate" value={t("common.bitrate", { value: statusData.DownloadRate })} />
+      <Block label="nzbget.rate" value={t("common.byterate", { value: statusData.DownloadRate })} />
       <Block
         label="nzbget.remaining"
         value={t("common.bytes", { value: statusData.RemainingSizeMB * 1024 * 1024 })}

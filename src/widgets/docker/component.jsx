@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { useTranslation } from "next-i18next";
 
-import calculateCPUPercent from "./stats-helpers";
+import { calculateCPUPercent, calculateUsedMemory } from "./stats-helpers";
 
 import Container from "components/services/widget/container";
 import Block from "components/services/widget/block";
@@ -19,10 +19,10 @@ export default function Component({ service }) {
 
   if (statsError || statsData?.error || statusError || statusData?.error) {
     const finalError = statsError ?? statsData?.error ?? statusError ?? statusData?.error;
-    return <Container error={finalError} />;
+    return <Container service={service} error={finalError} />;
   }
 
-  if (statusData && statusData.status !== "running") {
+  if (statusData && !(statusData.status.includes("running") || statusData.status.includes("partial"))) {
     return (
       <Container>
         <Block label={t("widget.status")} value={t("docker.offline")} />
@@ -47,7 +47,7 @@ export default function Component({ service }) {
     <Container service={service}>
       <Block label="docker.cpu" value={t("common.percent", { value: calculateCPUPercent(statsData.stats) })} />
       {statsData.stats.memory_stats.usage && 
-        <Block label="docker.mem" value={t("common.bytes", { value: statsData.stats.memory_stats.usage })} />
+        <Block label="docker.mem" value={t("common.bytes", { value: calculateUsedMemory(statsData.stats) })} />
       }
       {network && (
         <>

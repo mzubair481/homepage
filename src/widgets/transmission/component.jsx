@@ -12,7 +12,7 @@ export default function Component({ service }) {
   const { data: torrentData, error: torrentError } = useWidgetAPI(widget);
 
   if (torrentError) {
-    return <Container error={torrentError} />;
+    return <Container service={service} error={torrentError} />;
   }
 
   if (!torrentData) {
@@ -36,9 +36,9 @@ export default function Component({ service }) {
   return (
     <Container service={service}>
       <Block label="transmission.leech" value={t("common.number", { value: leech })} />
-      <Block label="transmission.download" value={t("common.bitrate", { value: rateDl * 8 })} />
+      <Block label="transmission.download" value={t("common.byterate", { value: rateDl })} />
       <Block label="transmission.seed" value={t("common.number", { value: completed })} />
-      <Block label="transmission.upload" value={t("common.bitrate", { value: rateUl * 8 })} />
+      <Block label="transmission.upload" value={t("common.byterate", { value: rateUl })} />
     </Container>
   );
 }

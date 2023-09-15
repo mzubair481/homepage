@@ -1,5 +1,5 @@
 import getServiceWidget from "utils/config/service-helpers";
-import { formatApiCall } from "utils/proxy/api-helpers";
+import { formatApiCall, sanitizeErrorURL } from "utils/proxy/api-helpers";
 import validateWidgetData from "utils/proxy/validate-widget-data";
 import { httpProxy } from "utils/proxy/http";
 import createLogger from "utils/logger";
@@ -20,26 +20,33 @@ export default async function genericProxyHandler(req, res, map) {
     if (widget) {
       const url = new URL(formatApiCall(widgets[widget.type].api, { endpoint, ...widget }));
 
-      let headers;
+      const headers = req.extraHeaders ?? widget.headers ?? {};
+      
       if (widget.username && widget.password) {
-        headers = {
-          Authorization: `Basic ${Buffer.from(`${widget.username}:${widget.password}`).toString("base64")}`,
-        };
+        headers.Authorization = `Basic ${Buffer.from(`${widget.username}:${widget.password}`).toString("base64")}`;
       }
 
-      const [status, contentType, data] = await httpProxy(url, {
-        method: req.method,
+      const params = {
+        method: widget.method ?? req.method,
         headers,
-      });
+      }
+      if (req.body) {
+        params.body = req.body;
+      }
+
+      const [status, contentType, data] = await httpProxy(url, params);
 
       let resultData = data;
       
-      if (!validateWidgetData(widget, endpoint, resultData)) {
-        return res.status(status).json({error: {message: "Invalid data", url, data: resultData}});
+      if (resultData.error?.url) {
+        resultData.error.url = sanitizeErrorURL(url);
       }
-
-      if (status === 200 && map) {
-        resultData = map(data);
+      
+      if (status === 200) {
+        if (!validateWidgetData(widget, endpoint, resultData)) {
+          return res.status(status).json({error: {message: "Invalid data", url: sanitizeErrorURL(url), data: resultData}});
+        }
+        if (map) resultData = map(resultData);
       }
 
       if (contentType) res.setHeader("Content-Type", contentType);
@@ -49,8 +56,15 @@ export default async function genericProxyHandler(req, res, map) {
       }
 
       if (status >= 400) {
-        logger.debug("HTTP Error %d calling %s//%s%s...", status, url.protocol, url.hostname, url.pathname);
-        return res.status(status).json({error: {message: "HTTP Error", url, data}});
+        logger.debug(
+          "HTTP Error %d calling %s//%s%s%s...",
+          status,
+          url.protocol,
+          url.hostname,
+          url.port ? `:${url.port}` : '',
+          url.pathname
+        );
+        return res.status(status).json({error: {message: "HTTP Error", url: sanitizeErrorURL(url), resultData}});
       }
 
       return res.status(status).send(resultData);
